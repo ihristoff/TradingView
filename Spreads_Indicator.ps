@@ -60,8 +60,9 @@ plot(show_nib ? nib_processed : na, color=color.purple, title="NIB", linewidth=2
 
 // Add horizontal lines for reference - must be in global scope
 // Zero line is always visible
-hline(0, color=color.gray, linestyle=hline.style_dashed)
+//hline(0, color=color.gray, linestyle=hline.style_dashed)
 
 // Conditional lines for normalized mode only
 hline(display_mode == "Normalized" ? 2 : na, color=color.gray, linestyle=hline.style_dotted)
 hline(display_mode == "Normalized" ? -2 : na, color=color.gray, linestyle=hline.style_dotted)
+hline(display_mode == "Normalized" ? 0 : na, color=color.gray, linestyle=hline.style_dotted)
