@@ -1,5 +1,5 @@
 //@version=5
-indicator("Treasury Spreads", overlay=input.bool(false, "Overlay on Chart"))
+indicator("Treasury Spreads (Overlay)", overlay=true)
 
 // Display options
 display_mode = input.string("Normalized", "Display Mode", options=["Normalized", "Percent Change", "Absolute"])
@@ -58,12 +58,10 @@ plot(show_fyt ? fyt_processed : na, color=color.red, title="FYT", linewidth=2)
 plot(show_nob ? nob_processed : na, color=color.green, title="NOB", linewidth=2)
 plot(show_nib ? nib_processed : na, color=color.purple, title="NIB", linewidth=2)
 
-// Add horizontal lines for reference (only for normalized view)
-if display_mode == "Normalized"
-    hline(0, color=color.gray, linestyle=hline.style_dashed)
-    hline(2, color=color.gray, linestyle=hline.style_dotted)
-    hline(-2, color=color.gray, linestyle=hline.style_dotted)
-else if display_mode == "Percent Change"
-    hline(0, color=color.gray, linestyle=hline.style_dashed)
-else
-    hline(0, color=color.gray, linestyle=hline.style_dashed)
+// Add horizontal lines for reference - must be in global scope
+// Zero line is always visible
+hline(0, color=color.gray, linestyle=hline.style_dashed)
+
+// Conditional lines for normalized mode only
+hline(display_mode == "Normalized" ? 2 : na, color=color.gray, linestyle=hline.style_dotted)
+hline(display_mode == "Normalized" ? -2 : na, color=color.gray, linestyle=hline.style_dotted)
