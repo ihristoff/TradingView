@@ -1,0 +1,69 @@
+//@version=5
+indicator("Treasury Spreads", overlay=input.bool(false, "Overlay on Chart"))
+
+// Display options
+display_mode = input.string("Normalized", "Display Mode", options=["Normalized", "Percent Change", "Absolute"])
+
+// Input options for different spreads
+show_fit = input.bool(true, "Show FIT (5y-2y)")
+show_fyt = input.bool(true, "Show FYT (10y-5y)")
+show_nob = input.bool(true, "Show NOB (10y-30y)")
+show_nib = input.bool(true, "Show NIB (5y-30y)")
+
+// Input for securities
+two_year = input(title="2-Year Symbol", defval="ZT1!")
+five_year = input(title="5-Year Symbol", defval="ZF1!")
+ten_year = input(title="10-Year Symbol", defval="ZN1!")
+thirty_year = input(title="30-Year Symbol", defval="ZB1!")
+
+// Security prices
+two_year_price = request.security(two_year, timeframe.period, close)
+five_year_price = request.security(five_year, timeframe.period, close)
+ten_year_price = request.security(ten_year, timeframe.period, close)
+thirty_year_price = request.security(thirty_year, timeframe.period, close)
+
+// Calculate spreads
+fit_spread = 2*five_year_price - ten_year_price
+fyt_spread = 3*five_year_price - 2*ten_year_price
+nob_spread = ten_year_price - thirty_year_price
+nib_spread = five_year_price - thirty_year_price
+
+// Normalize spreads to make them comparable
+normalize(series) =>
+    sma_series = ta.sma(series, 20)
+    (series - ta.sma(sma_series, 100)) / ta.stdev(series, 100)
+
+// Calculate percent change
+percent_change(series) =>
+    ta.change(series, 1) / series[1] * 100
+
+// Process spreads based on selected display mode
+process_spread(series) =>
+    if display_mode == "Normalized"
+        normalize(series)
+    else if display_mode == "Percent Change"
+        percent_change(series)
+    else // Absolute
+        series
+
+// Apply processing based on display mode
+fit_processed = process_spread(fit_spread)
+fyt_processed = process_spread(fyt_spread)
+nob_processed = process_spread(nob_spread)
+nib_processed = process_spread(nib_spread)
+
+// Plot spreads with conditional coloring
+plot(show_fit ? fit_processed : na, color=color.blue, title="FIT", linewidth=2)
+plot(show_fyt ? fyt_processed : na, color=color.red, title="FYT", linewidth=2)
+plot(show_nob ? nob_processed : na, color=color.green, title="NOB", linewidth=2)
+plot(show_nib ? nib_processed : na, color=color.purple, title="NIB", linewidth=2)
+
+// Add horizontal lines for reference (only for normalized view)
+if display_mode == "Normalized"
+    hline(0, color=color.gray, linestyle=hline.style_dashed)
+    hline(2, color=color.gray, linestyle=hline.style_dotted)
+    hline(-2, color=color.gray, linestyle=hline.style_dotted)
+else if display_mode == "Percent Change"
+    hline(0, color=color.gray, linestyle=hline.style_dashed)
+else
+    hline(0, color=color.gray, linestyle=hline.style_dashed)
