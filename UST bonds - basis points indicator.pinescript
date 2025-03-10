@@ -1,0 +1,87 @@
+// @version=5
+indicator("US Treasury Futures to Basis Points", overlay=false)
+
+// Input for selecting the bond futures contract
+contractType = input.string("ZN", "Contract Type", options=["ZT", "ZF", "ZN", "TN", "ZB", "UB"])
+
+// Function to convert price to basis points based on contract DV01 (dollar value of 1 basis point)
+priceToBasispointChange(price, previousPrice, contract) =>
+    // Contract specifics - DV01 values are approximate and may need fine-tuning
+    // DV01 varies with yield levels, but we use average values for simplicity
+    float dv01 = 0.0
+    float contractSize = 0.0
+    float divisor = 0.0
+    
+    // Set contract-specific parameters
+    if contract == "ZT" // 2-Year T-Note
+        dv01 := 0.020 // $20 per basis point per contract (approximate)
+        contractSize := 200000 // $200,000 face value
+        divisor := 1/32 // 2-year prices in 1/32nds
+    else if contract == "ZF" // 5-Year T-Note
+        dv01 := 0.045 // $45 per basis point per contract (approximate)
+        contractSize := 100000 // $100,000 face value
+        divisor := 1/32 // 5-year prices in 1/32nds
+    else if contract == "ZN" // 10-Year T-Note
+        dv01 := 0.072 // $72 per basis point per contract (approximate)
+        contractSize := 100000 // $100,000 face value 
+        divisor := 1/32 // 10-year prices in 1/32nds
+    else if contract == "TN" // Ultra 10-Year T-Note
+        dv01 := 0.090 // $90 per basis point per contract (approximate)
+        contractSize := 100000 // $100,000 face value
+        divisor := 1/32 // Ultra 10-year prices in 1/32nds
+    else if contract == "ZB" // 30-Year T-Bond
+        dv01 := 0.155 // $155 per basis point per contract (approximate)
+        contractSize := 100000 // $100,000 face value
+        divisor := 1/32 // 30-year prices in 1/32nds
+    else if contract == "UB" // Ultra T-Bond
+        dv01 := 0.215 // $215 per basis point per contract (approximate)
+        contractSize := 100000 // $100,000 face value
+        divisor := 1/32 // Ultra bond prices in 1/32nds
+    
+    // Calculate the price change in points
+    float priceDiff = price - previousPrice
+    
+    // Convert price change to dollars
+    float dollarChange = priceDiff * contractSize
+    
+    // Convert dollar change to basis points
+    float bpChange = dollarChange / dv01
+    
+    bpChange
+
+// Calculate the daily change in basis points
+dailyChange = priceToBasispointChange(close, close[1], contractType)
+
+// Calculate cumulative change from a reference starting point
+startPrice = request.security(syminfo.tickerid, "D", close[20])
+cumulativeChange = priceToBasispointChange(close, startPrice, contractType)
+
+// Plot the results
+plot(dailyChange, "Daily Basis Point Change", color=dailyChange >= 0 ? color.green : color.red, style=plot.style_columns)
+plot(cumulativeChange, "Cumulative BP Change (20d)", color=color.blue, linewidth=2)
+
+// Add horizontal zero line
+hline(0, "Zero Line", color=color.gray, linestyle=hline.style_dashed)
+
+// Add labels for current values
+var label dailyLabel = na
+var label cumLabel = na
+
+label.delete(dailyLabel)
+label.delete(cumLabel)
+
+dailyLabel := label.new(
+    bar_index, dailyChange, 
+    text="Daily: " + str.tostring(dailyChange, "#.0") + " bps", 
+    color=color.new(color.gray, 70), 
+    textcolor=dailyChange >= 0 ? color.green : color.red,
+    size=size.small
+)
+
+cumLabel := label.new(
+    bar_index, cumulativeChange, 
+    text="20d Change: " + str.tostring(cumulativeChange, "#.0") + " bps", 
+    color=color.new(color.gray, 70), 
+    textcolor=color.blue,
+    size=size.small
+)
