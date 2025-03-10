@@ -1,0 +1,32 @@
+Key Features
+
+Contract Selection: You can select which Treasury futures contract you're analyzing (ZT, ZF, ZN, TN, ZB, or UB).
+Price to Basis Points Conversion: The indicator converts price changes into basis point movements using the approximate DV01 (dollar value of 01, or the dollar value of 1 basis point change) for each contract.
+Daily Changes: Shows the day-to-day changes in basis points as green/red columns.
+Cumulative Changes: Tracks the 20-day cumulative change in basis points as a blue line.
+
+How to Use It
+
+Add the indicator to your TradingView chart of any Treasury futures contract
+Select the appropriate contract type from the settings
+The indicator will appear in a separate pane showing:
+
+Daily basis point changes as columns
+20-day cumulative change as a line
+
+
+
+Technical Notes
+
+The DV01 values are approximations and may vary slightly based on the current yield environment
+Contract specifications (face value, price increments) are built into the indicator
+The indicator accounts for the different price quotation conventions of Treasury futures
+
+Interpretation
+
+Positive values indicate yield decreases (price increases)
+Negative values indicate yield increases (price decreases)
+The magnitude shows how many basis points the underlying yield has moved
+
+This indicator gives you a standardized way to compare moves across different parts of the yield curve, making it easier to spot relative value opportunities or analyze curve flattening/steepening trades.
+Would you like me to make any adjustments to this indicator or explain any part of it in more detail?
