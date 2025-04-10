@@ -1,0 +1,71 @@
+// @version=5
+strategy("Daily Momentum Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// Input parameters
+dailyGainThreshold = input.float(5.0, "Daily Gain Threshold (%)", minval=0.1, step=0.1)
+exitDays = input.int(2, "Exit After Days", minval=1)
+stopLossPercent = input.float(5.0, "Stop Loss (%)", minval=0.1, step=0.1)
+takeProfitPercent = input.float(10.0, "Take Profit (%)", minval=0.1, step=0.1)
+
+// Calculate daily performance
+previousClose = request.security(syminfo.tickerid, "D", close[1])
+dailyPerformance = ((close - previousClose) / previousClose) * 100
+
+// Entry condition: Stock has closed with more than X% gain for the day
+entryCondition = dailyPerformance >= dailyGainThreshold and barstate.isconfirmed
+
+// Plot the daily performance for reference
+plot(dailyPerformance, "Daily Performance (%)", color=color.purple, style=plot.style_line)
+hline(dailyGainThreshold, "Entry Threshold", color=color.green, linestyle=hline.style_dashed)
+
+// Variables for tracking position and days in trade
+var entryPrice = 0.0
+var entryTime = 0
+var daysInTrade = 0
+
+// Reset position tracking when not in a position
+if (strategy.position_size == 0)
+    entryPrice := 0.0
+    entryTime := 0
+    daysInTrade := 0
+
+// Enter long position
+if (entryCondition and strategy.position_size == 0)
+    strategy.entry("Long", strategy.long)
+    entryPrice := close
+    entryTime := time
+    daysInTrade := 0
+
+// Increment days in trade for each new day
+if (strategy.position_size > 0 and time > entryTime)
+    // Check if this is a new day
+    newDay = na(time[1]) or (dayofmonth(time) != dayofmonth(time[1]) or month(time) != month(time[1]) or year(time) != year(time[1]))
+    if (newDay)
+        daysInTrade := daysInTrade + 1
+
+// Calculate stop loss and take profit levels
+stopLossPrice = entryPrice * (1 - stopLossPercent / 100)
+takeProfitPrice = entryPrice * (1 + takeProfitPercent / 100)
+
+// Exit conditions
+timeExitCondition = daysInTrade >= exitDays
+stopLossCondition = low <= stopLossPrice and strategy.position_size > 0
+takeProfitCondition = high >= takeProfitPrice and strategy.position_size > 0
+
+// Execute exits
+if (stopLossCondition)
+    strategy.close("Long", comment="Stop Loss")
+else if (takeProfitCondition)
+    strategy.close("Long", comment="Take Profit")
+else if (timeExitCondition and strategy.position_size > 0)
+    strategy.close("Long", comment="Time Exit")
+
+// Plot stop loss and take profit levels when in a position
+plot(strategy.position_size > 0 ? stopLossPrice : na, "Stop Loss", color=color.red, style=plot.style_linebr)
+plot(strategy.position_size > 0 ? takeProfitPrice : na, "Take Profit", color=color.green, style=plot.style_linebr)
+
+// Annotate entry and exit points
+plotshape(entryCondition and strategy.position_size == 0, "Entry Signal", shape.triangleup, location.belowbar, color.green, size=size.small)
+plotshape(timeExitCondition and strategy.position_size > 0, "Time Exit", shape.triangledown, location.abovebar, color.blue, size=size.small)
+plotshape(stopLossCondition, "Stop Loss Exit", shape.triangledown, location.abovebar, color.red, size=size.small)
+plotshape(takeProfitCondition, "Take Profit Exit", shape.triangledown, location.abovebar, color.green, size=size.small)
